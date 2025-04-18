@@ -51,13 +51,13 @@ class TrainPipelineConfig(HubMixin):
     seed: int | None = 1000
     # Number of workers for the dataloader.
     num_workers: int = 4
-    batch_size: int = 8
+    batch_size: int = 16    # defualt : 8  in single GPU, modified by tg.park
     steps: int = 100_000
-    eval_freq: int = 20_000
+    eval_freq: int = 20 # defualt : 20_000 
     log_freq: int = 200
     save_checkpoint: bool = True
     # Checkpoint is saved every `save_freq` training iterations and after the last training step.
-    save_freq: int = 20_000
+    save_freq: int = 20_000 # defualt : 20_000 
     use_policy_training_preset: bool = True
     optimizer: OptimizerConfig | None = None
     scheduler: LRSchedulerConfig | None = None
@@ -98,10 +98,11 @@ class TrainPipelineConfig(HubMixin):
                 self.job_name = f"{self.env.type}_{self.policy.type}"
 
         if not self.resume and isinstance(self.output_dir, Path) and self.output_dir.is_dir():
-            raise FileExistsError(
-                f"Output directory {self.output_dir} already exists and resume is {self.resume}. "
-                f"Please change your output directory so that {self.output_dir} is not overwritten."
-            )
+            pass
+            # raise FileExistsError(
+            #     f"Output directory {self.output_dir} already exists and resume is {self.resume}. "
+            #     f"Please change your output directory so that {self.output_dir} is not overwritten."
+            # )
         elif not self.output_dir:
             now = dt.datetime.now()
             train_dir = f"{now:%Y-%m-%d}/{now:%H-%M-%S}_{self.job_name}"

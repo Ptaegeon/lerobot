@@ -154,7 +154,6 @@ def rollout(
         observation = {
             key: observation[key].to(device, non_blocking=device.type == "cuda") for key in observation
         }
-
         with torch.inference_mode():
             action = policy.select_action(observation)
 
