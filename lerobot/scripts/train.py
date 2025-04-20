@@ -52,6 +52,7 @@ from lerobot.configs import parser
 from lerobot.configs.train import TrainPipelineConfig
 from lerobot.scripts.eval import eval_policy
 
+import argparse
 
 def update_policy(
     train_metrics: MetricsTracker,
@@ -121,6 +122,11 @@ def train(cfg: TrainPipelineConfig):
 
     # Check device is available
     device = get_safe_torch_device(cfg.policy.device, log=True)
+    
+    # select gpu device 
+    # device = torch.device("cuda:1")
+    # cfg.policy.device = device
+    
     torch.backends.cudnn.benchmark = True
     torch.backends.cuda.matmul.allow_tf32 = True
 
