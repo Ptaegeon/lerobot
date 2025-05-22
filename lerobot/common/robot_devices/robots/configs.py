@@ -443,7 +443,7 @@ class So100RobotConfig(ManipulatorRobotConfig):
     leader_arms: dict[str, MotorsBusConfig] = field(
         default_factory=lambda: {
             "main": FeetechMotorsBusConfig(
-                port="/dev/tty.usbmodem58760431091",
+                port="/dev/ttyUSB0",
                 motors={
                     # name: (index, model)
                     "shoulder_pan": [1, "sts3215"],
@@ -460,7 +460,7 @@ class So100RobotConfig(ManipulatorRobotConfig):
     follower_arms: dict[str, MotorsBusConfig] = field(
         default_factory=lambda: {
             "main": FeetechMotorsBusConfig(
-                port="/dev/tty.usbmodem585A0076891",
+                port="/dev/ttyUSB1",
                 motors={
                     # name: (index, model)
                     "shoulder_pan": [1, "sts3215"],
@@ -483,7 +483,7 @@ class So100RobotConfig(ManipulatorRobotConfig):
                 height=480,
             ),
             "phone": OpenCVCameraConfig(
-                camera_index=1,
+                camera_index=2,
                 fps=30,
                 width=640,
                 height=480,
@@ -493,6 +493,72 @@ class So100RobotConfig(ManipulatorRobotConfig):
 
     mock: bool = False
 
+@RobotConfig.register_subclass("so100_2")
+@dataclass
+class So1002RobotConfig(RobotConfig):
+    # `max_relative_target` limits the magnitude of the relative positional target vector for safety purposes.
+    # Set this to a positive scalar to have the same value for all motors, or a list that is the same length as
+    # the number of motors in your follower arms.
+    max_relative_target: int | None = None
+    calibration_dir: str = ".cache/calibration/so100_2"
+
+    # Network Configuration
+    ip: str = "127.0.0.1"
+    port: int = 6332
+    video_port: int = 6333
+
+    cameras: dict[str, CameraConfig] = field(
+        default_factory=lambda: {
+            "laptop": OpenCVCameraConfig(
+                camera_index=0,
+                fps=30,
+                width=640,
+                height=480,
+            ),
+            "phone": OpenCVCameraConfig(
+                camera_index=2,
+                fps=30,
+                width=640,
+                height=480,
+            ),
+        }
+    )
+
+    leader_arms: dict[str, MotorsBusConfig] = field(
+        default_factory=lambda: {
+            "main": FeetechMotorsBusConfig(
+                port="/dev/ttyUSB0",
+                motors={
+                    # name: (index, model)
+                    "shoulder_pan": [1, "sts3215"],
+                    "shoulder_lift": [2, "sts3215"],
+                    "elbow_flex": [3, "sts3215"],
+                    "wrist_flex": [4, "sts3215"],
+                    "wrist_roll": [5, "sts3215"],
+                    "gripper": [6, "sts3215"],
+                },
+            ),
+        }
+    )
+
+    follower_arms: dict[str, MotorsBusConfig] = field(
+        default_factory=lambda: {
+            "main": FeetechMotorsBusConfig(
+                port="/dev/ttyUSB1",
+                motors={
+                    # name: (index, model)
+                    "shoulder_pan": [1, "sts3215"],
+                    "shoulder_lift": [2, "sts3215"],
+                    "elbow_flex": [3, "sts3215"],
+                    "wrist_flex": [4, "sts3215"],
+                    "wrist_roll": [5, "sts3215"],
+                    "gripper": [6, "sts3215"],
+                },
+            ),
+        }
+    )
+
+    mock: bool = False
 
 @RobotConfig.register_subclass("stretch")
 @dataclass
@@ -545,11 +611,17 @@ class LeKiwiRobotConfig(RobotConfig):
 
     cameras: dict[str, CameraConfig] = field(
         default_factory=lambda: {
-            "front": OpenCVCameraConfig(
-                camera_index="/dev/video0", fps=30, width=640, height=480, rotation=90
+            "laptop": OpenCVCameraConfig(
+                camera_index=0,
+                fps=30,
+                width=640,
+                height=480,
             ),
-            "wrist": OpenCVCameraConfig(
-                camera_index="/dev/video2", fps=30, width=640, height=480, rotation=180
+            "phone": OpenCVCameraConfig(
+                camera_index=2,
+                fps=30,
+                width=640,
+                height=480,
             ),
         }
     )

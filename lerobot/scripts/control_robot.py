@@ -422,11 +422,12 @@ def control_robot(cfg: ControlPipelineConfig):
     elif isinstance(cfg.control, ReplayControlConfig):
         replay(robot, cfg.control)
     elif isinstance(cfg.control, RemoteRobotConfig):
-        from lerobot.common.robot_devices.robots.lekiwi_remote import run_lekiwi
+        from lerobot.common.robot_devices.robots.so100_remote import run_so100
+        # from lerobot.common.robot_devices.robots.lekiwi_remote import run_lekiwi
 
         _init_rerun(control_config=cfg.control, session_name="lerobot_control_loop_remote")
-        run_lekiwi(cfg.robot)
-
+        run_so100(cfg.robot)
+        # run_lekiwi(cfg.robot)
     if robot.is_connected:
         # Disconnect manually to avoid a "Core dump" during process
         # termination due to camera threads not properly exiting.
