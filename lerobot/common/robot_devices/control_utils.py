@@ -47,7 +47,7 @@ def log_control_info(robot: Robot, dt_s, episode_index=None, frame_index=None, f
 
     def log_dt(shortname, dt_val_s):
         nonlocal log_items, fps
-        info_str = f"{shortname}:{dt_val_s * 1000:5.2f} ({1 / dt_val_s:3.1f}hz)"
+        info_str = f"{shortname}:{dt_val_s * 1000:5.2f}ms ({1 / dt_val_s:3.1f}hz)"
         if fps is not None:
             actual_fps = 1 / dt_val_s
             if actual_fps < fps - 1:
@@ -78,6 +78,12 @@ def log_control_info(robot: Robot, dt_s, episode_index=None, frame_index=None, f
             if key in robot.logs:
                 log_dt(f"dtR{name}", robot.logs[key])
 
+        if "decode_time_s" in robot.logs:
+            log_dt("decode", robot.logs["decode_time_s"])
+
+        if "infer_time_s" in robot.logs:
+            log_dt("infer", robot.logs["infer_time_s"])
+
     info_str = " ".join(log_items)
     logging.info(info_str)
 
@@ -101,7 +107,7 @@ def is_headless():
         return True
 
 
-def predict_action(observation, policy, device, use_amp):
+def predict_action(observation, policy, device, use_amp, robot):
     observation = copy(observation)
     with (
         torch.inference_mode(),
@@ -115,10 +121,18 @@ def predict_action(observation, policy, device, use_amp):
             observation[name] = observation[name].unsqueeze(0)
             observation[name] = observation[name].to(device)
 
+        torch.cuda.synchronize()
+        infer_start = time.time()
+
         # Compute the next action with the policy
         # based on the current observation
         action = policy.select_action(observation)
 
+        torch.cuda.synchronize()
+        infer_end = time.time()
+
+        robot.logs["infer_time_s"] = infer_end - infer_start
+        
         # Remove batch dimension
         action = action.squeeze(0)
 
@@ -253,7 +267,7 @@ def control_loop(
 
             if policy is not None:
                 pred_action = predict_action(
-                    observation, policy, get_safe_torch_device(policy.config.device), policy.config.use_amp
+                    observation, policy, get_safe_torch_device(policy.config.device), policy.config.use_amp, robot
                 )
                 # Action can eventually be clipped using `max_relative_target`,
                 # so action actually sent is saved in the dataset.
