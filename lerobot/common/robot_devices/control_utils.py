@@ -18,6 +18,8 @@
 
 
 import logging
+logging.basicConfig(level=logging.INFO)
+
 import time
 import traceback
 from contextlib import nullcontext
