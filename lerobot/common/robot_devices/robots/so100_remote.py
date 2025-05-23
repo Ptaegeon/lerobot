@@ -42,9 +42,13 @@ def run_camera_capture(cameras, images_lock, latest_images_dict, stop_event):
         local_dict = {}
         for name, cam in cameras.items():
             frame = cam.async_read()
+            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            cv2.imshow(f"Camera: {name}", frame) ###############
+            cv2.waitKey(1)  #####################
             ret, buffer = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
             if ret:
                 local_dict[name] = base64.b64encode(buffer).decode("utf-8")
+                # print(f"[DEBUG] Captured and encoded image from camera: {name}") ###############################
             else:
                 local_dict[name] = ""
         with images_lock:
@@ -109,9 +113,8 @@ def run_so100(robot_config):
     motors_bus = FeetechMotorsBus(motor_config)
     motors_bus.connect()
 
-####### 추후에 calibration 까지 추가할 예정 ########
-    # # Calibrate the follower arm.
-    # calibrate_follower_arm(motors_bus, robot_config.calibration_dir)
+    # Calibrate the follower arm.
+    calibrate_follower_arm(motors_bus, robot_config.calibration_dir)
 
     # Create the LeKiwi robot instance.
     robot = MobileManipulator(robot_config)
@@ -142,17 +145,21 @@ def run_so100(robot_config):
         while True:
             loop_start_time = time.time()
 
+            # print("[DEBUG] Main loop is alive") #########################################
+
             # Process incoming commands (non-blocking).
             while True:
                 try:
                     msg = cmd_socket.recv_string(zmq.NOBLOCK)
                 except zmq.Again:
+                    # print("[DEBUG] No new command received this loop.") #########################
                     break
                 try:
                     data = json.loads(msg)
                     # Process arm position commands.
                     if "arm_positions" in data:
                         arm_positions = data["arm_positions"]
+                        # print(f"[INFO] Received arm_positions: {arm_positions}") #########################
                         if not isinstance(arm_positions, list):
                             print(f"[ERROR] Invalid arm_positions: {arm_positions}")
                         elif len(arm_positions) < len(arm_motor_ids):
@@ -162,14 +169,10 @@ def run_so100(robot_config):
                         else:
                             for motor, pos in zip(arm_motor_ids, arm_positions, strict=False):
                                 motors_bus.write("Goal_Position", pos, motor)
+                                print(f"[INFO] Writing Goal_Position to {motor}: {pos}") ##########################
+
                 except Exception as e:
                     print(f"[ERROR] Parsing message failed: {e}")
-
-            # Watchdog: stop the robot if no command is received for over 0.5 seconds.
-            now = time.time()
-            if now - last_cmd_time > 0.5:
-                robot.stop()
-                last_cmd_time = now
 
             # Read the follower arm state from the motors bus.
             follower_arm_state = []
@@ -191,6 +194,7 @@ def run_so100(robot_config):
                 "follower_arm_state": follower_arm_state,
             }
             # Send the observation over the video socket.
+            # print(f"[INFO] Sending observation: {observation}") ##########################
             video_socket.send_string(json.dumps(observation))
 
             # Ensure a short sleep to avoid overloading the CPU.
